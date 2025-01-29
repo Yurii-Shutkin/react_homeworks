@@ -1,0 +1,15 @@
+.list_wrapper {
+    border: 1px solid #000;
+    padding: 10px;
+}
+
+.list_title {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.list_item {
+    display: flex;
+    justify-content: space-between;
+    margin: 5px 0;
+}

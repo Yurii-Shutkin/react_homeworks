@@ -1,0 +1,7 @@
+.list_button {
+    margin-left: 10px;
+}
+
+.list_button:hover {
+    cursor: pointer;
+}
