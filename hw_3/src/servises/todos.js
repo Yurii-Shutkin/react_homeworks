@@ -11,6 +11,14 @@ const services = {
         "Content-type": "application/json"
       }
     }).then(data => data.json()),
+  post: (item) => fetch((API_URL), 
+    {
+      method: 'POST',
+      body: JSON.stringify(item),
+      headers: {
+        "Content-type": "application/json"
+      }
+    }).then(data => data.json())
 }
 
 export {services};
