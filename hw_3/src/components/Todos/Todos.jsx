@@ -1,28 +1,29 @@
 import { useEffect, useState } from 'react'
 import './Todos.css'
+
+import Form from './Form/Form';
 import List from './List/List';
+
 import { services } from '../../servises/todos';
+import { actions } from '../../constants/tasks';
 
 export default function Todos() {
   const [todos, setTodos] = useState([]);
   const [newTodos, setNewTodos] = useState([]);
-  const [inProgresTodos, setInProgresTodo] = useState([]);
+  const [inProgresTodos, setInProgresTodos] = useState([]);
   const [doneTodos, setDoneTodos] = useState([]);
+  const [onHoldTodos, setOnHoldTodos] = useState([]);
 
-  const actions = {
-    TODO: 'TODO',
-    IN_PROGRESS: 'IN_PROGRESS',
-    DONE: 'DONE'
-  }
 
   useEffect(() => {
     getTodos();
   }, [])
 
   useEffect(() => {
-    setNewTodos(todos.filter(todo => todo.status === 0));
-    setInProgresTodo(todos.filter(todo => todo.status === 1));
-    setDoneTodos(todos.filter(todo => todo.status === 2));
+    setNewTodos(todos.filter(todo => todo.status === actions.TODO.value));
+    setInProgresTodos(todos.filter(todo => todo.status === actions.IN_PROGRESS.value));
+    setDoneTodos(todos.filter(todo => todo.status === actions.DONE.value));
+    setOnHoldTodos(todos.filter(todo => todo.status === actions.ON_HOLD.value));
 
   }, [todos])
 
@@ -44,17 +45,9 @@ export default function Todos() {
     }
   }
 
-  const onEditHandler = async (id, action) => {
-    let actualStatus = null;
-    switch (action) {
-      case 'IN_PROGRESS': actualStatus = 1;
-        break;
-      case 'DONE': actualStatus = 2;
-        break;
-      case 'TODO': actualStatus = 0;
-        break;
-      default: actualStatus = 0
-    }
+  const onEditHandler = async (id, actionTitle) => {
+    const actualStatus = actionTitle;
+
     try {
       await services.put(id, { status: actualStatus })
       getTodos();
@@ -63,31 +56,73 @@ export default function Todos() {
     }
   }
 
+  const onAddTodoHandler = async (e, ref) => {
+    e.preventDefault();
+    const selectedValue = +ref.select.current.value;
+    const newTodo = {
+      title: ref.input.current.value,
+      status: selectedValue,
+    }
+    try {
+      await services.post(newTodo);
+      getTodos();
+      ref.input.current.value = '';
+    } catch (err) {
+      console.log(err)
+    }
+  }
+
+  const TASKS = [
+    {
+      title: 'To Do',
+      tasks: newTodos,
+      btns: [
+        { title: `In progress`, action: actions.IN_PROGRESS.value, handler: onEditHandler, type: 'text' },
+      ],
+    },
+    {
+      title: 'On Hold',
+      tasks: onHoldTodos,
+      btns: [
+        { title: `To do`, action: actions.TODO.value, handler: onEditHandler, type: 'text' },
+        { title: `In progress`, action: actions.IN_PROGRESS.value, handler: onEditHandler, type: 'text' }
+      ],
+    },
+    {
+      title: 'In Progress',
+      tasks: inProgresTodos,
+      btns: [
+        { title: 'To do', action: actions.TODO.value, handler: onEditHandler, type: 'text' },
+        { title: 'Done', action: actions.DONE.value, handler: onEditHandler, type: 'text' },
+        { title: 'On hold', action: actions.ON_HOLD.value, handler: onEditHandler, type: 'text' },
+      ],
+    },
+    {
+      title: 'Done',
+      tasks: doneTodos,
+      btns: [{ title: 'To archive', handler: onDeleteHandler, type: 'text' }],
+    },
+  ];
+
   return todos.length ? (
-    <div className='main_wrap'>
-      <List
-        title={'To Do'}
-        buttonTitle={'In Progress'}
-        todos={newTodos}
-        action={actions.IN_PROGRESS}
-        actionFn={onEditHandler}
+    <>
+      <Form
+        actionObj={actions}
+        addHandler={onAddTodoHandler}
       />
-      <List
-        title={'In Progress'}
-        buttonTitle={'Todo'}
-        secondButtonTitle={'Done'}
-        todos={inProgresTodos}
-        action={actions.TODO}
-        secondAction={actions.DONE}
-        actionFn={onEditHandler}
-      />
-      <List
-        title={'Done'}
-        buttonTitle={'To archive'}
-        todos={doneTodos}
-        action={actions.DONE}
-        actionFn={onDeleteHandler}
-      />
-    </div>
+
+      <div className='main_wrap'>
+        {TASKS ? TASKS.map((task, ind) => {
+          return (
+            <List
+              key={ind}
+              title={task.title}
+              todos={task.tasks}
+              buttons={task.btns}
+            />
+          )
+        }) : null}
+      </div>
+    </>
   ) : null;
 }
